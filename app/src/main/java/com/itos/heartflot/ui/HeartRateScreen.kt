@@ -26,6 +26,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -65,6 +66,7 @@ fun HeartRateScreen(
     viewModel: HeartRateViewModel = viewModel(),
     permissionGuideData: PermissionGuideData = PermissionGuideData(state = PermissionGuideState.HIDDEN),
     onShowHistory: () -> Unit = {},
+    onShowAppInfo: () -> Unit = {},
     onToggleFloatingWindow: () -> Unit = {},
     onRequestOverlayPermission: () -> Unit = {},
     sharedTransitionScope: SharedTransitionScope,
@@ -163,7 +165,16 @@ fun HeartRateScreen(
                         viewModel.connectToDevice(device)
                     }
                 )
+                
+                Spacer(modifier = Modifier.height(16.dp))
             }
+            
+            // 应用信息卡片
+            AppInfoCard(
+                onClick = onShowAppInfo,
+                sharedTransitionScope = sharedTransitionScope,
+                animatedContentScope = animatedContentScope
+            )
         }
         
         // 错误提示
@@ -266,6 +277,55 @@ fun StatusInfo(
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+fun AppInfoCard(
+    onClick: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope
+) {
+    with(sharedTransitionScope) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .sharedBounds(
+                rememberSharedContentState(key = "appinfo_container"),
+                animatedContentScope
+            )
+            .clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = AppShapes.card,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Info,
+                contentDescription = "应用信息",
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+            Spacer(modifier = Modifier.size(8.dp))
+            Text(
+                "应用信息",
+                modifier = Modifier.sharedBounds(
+                    rememberSharedContentState(key = "appinfo_title"),
+                    animatedContentScope
+                ),
+                color = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+        }
+    }
     }
 }
 

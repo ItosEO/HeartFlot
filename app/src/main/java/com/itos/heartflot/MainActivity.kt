@@ -33,6 +33,7 @@ import androidx.lifecycle.ViewModelProvider
 import android.widget.Toast
 import com.itos.heartflot.permission.PermissionManager
 import com.itos.heartflot.service.HeartRateService
+import com.itos.heartflot.ui.AppInfoScreen
 import com.itos.heartflot.ui.HeartRateScreen
 import com.itos.heartflot.ui.PermissionGuideData
 import com.itos.heartflot.ui.PermissionGuideState
@@ -47,6 +48,7 @@ class MainActivity : ComponentActivity() {
     private var serviceBound = false
     
     private var showHistoryScreen by mutableStateOf(false)
+    private var showAppInfoScreen by mutableStateOf(false)
     private var lastBackPressTime = 0L
     private val backPressInterval = 2000L // 2秒内连续按返回键才退出
     
@@ -133,48 +135,65 @@ class MainActivity : ComponentActivity() {
             HeartFlotTheme {
                 // 处理返回键
                 BackHandler(enabled = true) {
-                    if (showHistoryScreen) {
-                        // 在历史记录界面，返回主界面
-                        showHistoryScreen = false
-                    } else {
-                        // 在主界面，二次确认退出
-                        handleMainScreenBack()
+                    when {
+                        showAppInfoScreen -> {
+                            // 在应用信息界面，返回主界面
+                            showAppInfoScreen = false
+                        }
+                        showHistoryScreen -> {
+                            // 在历史记录界面，返回主界面
+                            showHistoryScreen = false
+                        }
+                        else -> {
+                            // 在主界面，二次确认退出
+                            handleMainScreenBack()
+                        }
                     }
                 }
                 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     SharedTransitionLayout {
                         AnimatedContent(
-                            targetState = showHistoryScreen,
+                            targetState = when {
+                                showAppInfoScreen -> "appInfo"
+                                showHistoryScreen -> "history"
+                                else -> "main"
+                            },
                             transitionSpec = {
-                                if (targetState) { // -> History
-                                    fadeIn(animationSpec = tween(220, delayMillis = 80)) togetherWith
-                                            fadeOut(animationSpec = tween(100))
-                                } else { // -> Main
-                                    fadeIn(animationSpec = tween(220, delayMillis = 80)) togetherWith
-                                            fadeOut(animationSpec = tween(100))
-                                }
+                                fadeIn(animationSpec = tween(500, delayMillis = 140)) togetherWith
+                                        fadeOut(animationSpec = tween(200))
                             },
                             label = "screen_transition"
-                        ) { targetShowHistory ->
-                            if (targetShowHistory) {
-                                RecordHistoryScreen(
-                                    viewModel = viewModel,
-                                    onBack = { showHistoryScreen = false },
-                                    sharedTransitionScope = this@SharedTransitionLayout,
-                                    animatedContentScope = this@AnimatedContent
-                                )
-                            } else {
-                                HeartRateScreen(
-                                    modifier = Modifier.padding(innerPadding),
-                                    viewModel = viewModel,
-                                    permissionGuideData = permissionGuideData,
-                                    onShowHistory = { showHistoryScreen = true },
-                                    onToggleFloatingWindow = { toggleFloatingWindow() },
-                                    onRequestOverlayPermission = { requestOverlayPermission() },
-                                    sharedTransitionScope = this@SharedTransitionLayout,
-                                    animatedContentScope = this@AnimatedContent
-                                )
+                        ) { targetScreen ->
+                            when (targetScreen) {
+                                "appInfo" -> {
+                                    AppInfoScreen(
+                                        onBack = { showAppInfoScreen = false },
+                                        sharedTransitionScope = this@SharedTransitionLayout,
+                                        animatedContentScope = this@AnimatedContent
+                                    )
+                                }
+                                "history" -> {
+                                    RecordHistoryScreen(
+                                        viewModel = viewModel,
+                                        onBack = { showHistoryScreen = false },
+                                        sharedTransitionScope = this@SharedTransitionLayout,
+                                        animatedContentScope = this@AnimatedContent
+                                    )
+                                }
+                                else -> {
+                                    HeartRateScreen(
+                                        modifier = Modifier.padding(innerPadding),
+                                        viewModel = viewModel,
+                                        permissionGuideData = permissionGuideData,
+                                        onShowHistory = { showHistoryScreen = true },
+                                        onShowAppInfo = { showAppInfoScreen = true },
+                                        onToggleFloatingWindow = { toggleFloatingWindow() },
+                                        onRequestOverlayPermission = { requestOverlayPermission() },
+                                        sharedTransitionScope = this@SharedTransitionLayout,
+                                        animatedContentScope = this@AnimatedContent
+                                    )
+                                }
                             }
                         }
                     }
