@@ -161,12 +161,12 @@ fun FloatingCapsule(
 ) {
     Box(
         modifier = modifier
-            .size(width = 48.dp, height = 28.dp)
+            .size(width = 44.dp, height = 28.dp)
             .background(
                 color = if (isRecording)
-                    Color(0xD9F44336) // 半透明红色 (0.85 alpha)
+                    Color(0x99F44336) // 60% alpha red
                 else
-                    Color(0xD94CAF50), // 半透明绿色 (0.85 alpha)
+                    Color(0x994CAF50), // 60% alpha green
                 shape = ContinuousCapsule()
             ),
         contentAlignment = Alignment.Center

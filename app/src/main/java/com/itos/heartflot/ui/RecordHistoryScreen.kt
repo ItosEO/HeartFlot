@@ -8,9 +8,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -40,6 +40,7 @@ import com.itos.heartflot.viewmodel.HeartRateViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -111,118 +112,96 @@ fun RecordSessionCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(vertical = 8.dp, horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                // 设备名称
+            // 左侧：设备名和日期
+            Column(modifier = Modifier.weight(1.5f)) {
                 Text(
                     text = session.deviceName ?: "未知设备",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
                 )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                // 时间信息
+                Spacer(modifier = Modifier.padding(1.dp))
                 Text(
-                    text = formatTimeRange(session.startTime, session.endTime),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                // 持续时间
-                val duration = (session.endTime - session.startTime) / 1000 / 60
-                Text(
-                    text = "持续时间: ${duration}分钟 | 记录数: ${session.recordCount}",
+                    text = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(session.startTime)),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                // 心率统计
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // 中间：心率统计
+            Row(
+                modifier = Modifier.weight(1.2f),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                CompactHeartRateStat(
+                    value = session.averageHeartRate,
+                    color = Color(0xFF2196F3) // Blue
+                )
+                CompactHeartRateStat(
+                    value = session.maxHeartRate,
+                    color = Color(0xFFF44336) // Red
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // 右侧：时长和删除按钮
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.End,
+                modifier = Modifier.weight(1.3f)
+            ) {
+                Text(
+                    text = formatDuration(session.endTime - session.startTime),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+                IconButton(
+                    onClick = onDelete,
+                    modifier = Modifier.size(36.dp)
                 ) {
-                    HeartRateStatItem(
-                        label = "平均",
-                        value = session.averageHeartRate,
-                        color = Color(0xFF4CAF50)
-                    )
-                    HeartRateStatItem(
-                        label = "最小",
-                        value = session.minHeartRate,
-                        color = Color(0xFF2196F3)
-                    )
-                    HeartRateStatItem(
-                        label = "最大",
-                        value = session.maxHeartRate,
-                        color = Color(0xFFF44336)
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "删除",
+                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
                     )
                 }
-            }
-            
-            // 删除按钮
-            IconButton(
-                onClick = onDelete,
-                modifier = Modifier.size(48.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "删除",
-                    tint = MaterialTheme.colorScheme.error
-                )
             }
         }
     }
 }
 
 @Composable
-fun HeartRateStatItem(
-    label: String,
-    value: Int,
-    color: Color
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
+private fun CompactHeartRateStat(value: Int, color: Color) {
+    Box(
+        modifier = Modifier
+            .background(
+                color = color.copy(alpha = 0.2f),
+                shape = AppShapes.badge
+            )
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        contentAlignment = Alignment.Center
     ) {
         Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            text = value.toString(),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold,
+            color = color
         )
-        Spacer(modifier = Modifier.height(4.dp))
-        Box(
-            modifier = Modifier
-                .background(
-                    color = color.copy(alpha = 0.2f),
-                    shape = AppShapes.badge
-                )
-                .padding(horizontal = 8.dp, vertical = 4.dp)
-        ) {
-            Text(
-                text = value.toString(),
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
-                color = color
-            )
-        }
     }
 }
 
-private fun formatTimeRange(startTime: Long, endTime: Long): String {
-    val dateFormat = SimpleDateFormat("MM/dd HH:mm", Locale.getDefault())
-    val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-    
-    val startDate = Date(startTime)
-    val endDate = Date(endTime)
-    
-    return "${dateFormat.format(startDate)} - ${timeFormat.format(endDate)}"
+private fun formatDuration(millis: Long): String {
+    val minutes = TimeUnit.MILLISECONDS.toMinutes(millis)
+    val seconds = TimeUnit.MILLISECONDS.toSeconds(millis) - TimeUnit.MINUTES.toSeconds(minutes)
+    return "${minutes}m${seconds}s"
 }
 
