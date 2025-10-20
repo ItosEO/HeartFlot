@@ -17,12 +17,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.savedstate.SavedStateRegistry
+import androidx.savedstate.SavedStateRegistryController
+import androidx.savedstate.SavedStateRegistryOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.kyant.capsule.ContinuousCapsule
 
-class FloatingWindowView(context: Context) {
+class FloatingWindowView(context: Context) : LifecycleOwner, ViewModelStoreOwner, SavedStateRegistryOwner {
     
     private var heartRate by mutableIntStateOf(0)
     private var isRecording by mutableStateOf(false)
@@ -33,7 +45,20 @@ class FloatingWindowView(context: Context) {
     private var lastY = 0f
     private var isDragging = false
     
+    private val lifecycleRegistry: LifecycleRegistry = LifecycleRegistry(this)
+    private val savedStateRegistryController: SavedStateRegistryController = SavedStateRegistryController.create(this)
+    private val store: ViewModelStore = ViewModelStore()
+    
+    override val lifecycle: Lifecycle get() = lifecycleRegistry
+    override val savedStateRegistry: SavedStateRegistry get() = savedStateRegistryController.savedStateRegistry
+    override val viewModelStore: ViewModelStore get() = store
+    
     val view: ComposeView = ComposeView(context).apply {
+        setViewTreeLifecycleOwner(this@FloatingWindowView)
+        setViewTreeViewModelStoreOwner(this@FloatingWindowView)
+        setViewTreeSavedStateRegistryOwner(this@FloatingWindowView)
+        setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
+        
         setupTouchListener(this)
         setContent {
             FloatingCapsule(
@@ -41,6 +66,36 @@ class FloatingWindowView(context: Context) {
                 isRecording = isRecording
             )
         }
+    }
+    
+    init {
+        savedStateRegistryController.performRestore(null)
+        lifecycleRegistry.currentState = Lifecycle.State.CREATED
+    }
+    
+    fun onCreate() {
+        lifecycleRegistry.currentState = Lifecycle.State.CREATED
+    }
+    
+    fun onStart() {
+        lifecycleRegistry.currentState = Lifecycle.State.STARTED
+    }
+    
+    fun onResume() {
+        lifecycleRegistry.currentState = Lifecycle.State.RESUMED
+    }
+    
+    fun onPause() {
+        lifecycleRegistry.currentState = Lifecycle.State.STARTED
+    }
+    
+    fun onStop() {
+        lifecycleRegistry.currentState = Lifecycle.State.CREATED
+    }
+    
+    fun onDestroy() {
+        lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
+        store.clear()
     }
     
     fun updateHeartRate(rate: Int) {

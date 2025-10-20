@@ -33,6 +33,9 @@ class FloatingWindowManager(private val context: Context) {
                     }
                 }
             }
+            onCreate()
+            onStart()
+            onResume()
         }
         
         layoutParams = WindowManager.LayoutParams().apply {
@@ -57,6 +60,8 @@ class FloatingWindowManager(private val context: Context) {
             isShowing = true
         } catch (e: Exception) {
             e.printStackTrace()
+            floatingView?.onDestroy()
+            floatingView = null
             isShowing = false
         }
     }
@@ -65,9 +70,12 @@ class FloatingWindowManager(private val context: Context) {
         if (!isShowing) return
         
         try {
+            floatingView?.onPause()
+            floatingView?.onStop()
             floatingView?.view?.let {
                 windowManager.removeView(it)
             }
+            floatingView?.onDestroy()
             isShowing = false
         } catch (e: Exception) {
             e.printStackTrace()

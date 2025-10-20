@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.os.IBinder
 import android.provider.Settings
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
@@ -22,6 +23,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModelProvider
+import android.widget.Toast
 import com.itos.heartflot.service.HeartRateService
 import com.itos.heartflot.ui.HeartRateScreen
 import com.itos.heartflot.ui.RecordHistoryScreen
@@ -35,6 +37,8 @@ class MainActivity : ComponentActivity() {
     private var serviceBound = false
     
     private var showHistoryScreen by mutableStateOf(false)
+    private var lastBackPressTime = 0L
+    private val backPressInterval = 2000L // 2秒内连续按返回键才退出
     
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
@@ -74,6 +78,17 @@ class MainActivity : ComponentActivity() {
         
         setContent {
             HeartFlotTheme {
+                // 处理返回键
+                BackHandler(enabled = true) {
+                    if (showHistoryScreen) {
+                        // 在历史记录界面，返回主界面
+                        showHistoryScreen = false
+                    } else {
+                        // 在主界面，二次确认退出
+                        handleMainScreenBack()
+                    }
+                }
+                
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     if (showHistoryScreen) {
                         RecordHistoryScreen(
@@ -128,6 +143,18 @@ class MainActivity : ComponentActivity() {
                 )
                 overlayPermissionLauncher.launch(intent)
             }
+        }
+    }
+    
+    private fun handleMainScreenBack() {
+        val currentTime = System.currentTimeMillis()
+        if (currentTime - lastBackPressTime < backPressInterval) {
+            // 两次按返回键间隔小于2秒，退出应用
+            finish()
+        } else {
+            // 第一次按返回键，显示提示
+            lastBackPressTime = currentTime
+            Toast.makeText(this, "再次返回退出应用", Toast.LENGTH_SHORT).show()
         }
     }
     
