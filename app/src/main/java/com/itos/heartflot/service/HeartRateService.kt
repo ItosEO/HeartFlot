@@ -185,10 +185,15 @@ class HeartRateService : Service() {
                 if (currentState.isRecording) {
                     stopRecordingInternal()
                 }
+                // 断开连接时自动关闭悬浮窗
+                if (floatingWindowManager.isShowing()) {
+                    floatingWindowManager.hide()
+                }
                 _state.value = currentState.copy(
                     isConnected = false,
                     connectedDevice = null,
-                    currentHeartRate = 0
+                    currentHeartRate = 0,
+                    showFloatingWindow = false
                 )
             } else {
                 _state.value = currentState.copy(isConnected = true)

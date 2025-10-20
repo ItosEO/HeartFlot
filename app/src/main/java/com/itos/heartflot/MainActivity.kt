@@ -101,37 +101,39 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 
-                SharedTransitionLayout {
-                    AnimatedContent(
-                        targetState = showHistoryScreen,
-                        transitionSpec = {
-                            if (targetState) { // -> History
-                                fadeIn(animationSpec = tween(220, delayMillis = 80)) togetherWith
-                                        fadeOut(animationSpec = tween(100))
-                            } else { // -> Main
-                                fadeIn(animationSpec = tween(220, delayMillis = 80)) togetherWith
-                                        fadeOut(animationSpec = tween(100))
+                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    SharedTransitionLayout {
+                        AnimatedContent(
+                            targetState = showHistoryScreen,
+                            transitionSpec = {
+                                if (targetState) { // -> History
+                                    fadeIn(animationSpec = tween(220, delayMillis = 80)) togetherWith
+                                            fadeOut(animationSpec = tween(100))
+                                } else { // -> Main
+                                    fadeIn(animationSpec = tween(220, delayMillis = 80)) togetherWith
+                                            fadeOut(animationSpec = tween(100))
+                                }
+                            },
+                            label = "screen_transition"
+                        ) { targetShowHistory ->
+                            if (targetShowHistory) {
+                                RecordHistoryScreen(
+                                    viewModel = viewModel,
+                                    onBack = { showHistoryScreen = false },
+                                    sharedTransitionScope = this@SharedTransitionLayout,
+                                    animatedContentScope = this@AnimatedContent
+                                )
+                            } else {
+                                HeartRateScreen(
+                                    modifier = Modifier.padding(innerPadding),
+                                    viewModel = viewModel,
+                                    onShowHistory = { showHistoryScreen = true },
+                                    onToggleFloatingWindow = { toggleFloatingWindow() },
+                                    onRequestOverlayPermission = { requestOverlayPermission() },
+                                    sharedTransitionScope = this@SharedTransitionLayout,
+                                    animatedContentScope = this@AnimatedContent
+                                )
                             }
-                        },
-                        label = "screen_transition"
-                    ) { targetShowHistory ->
-                        if (targetShowHistory) {
-                            RecordHistoryScreen(
-                                viewModel = viewModel,
-                                onBack = { showHistoryScreen = false },
-                                sharedTransitionScope = this@SharedTransitionLayout,
-                                animatedContentScope = this@AnimatedContent
-                            )
-                        } else {
-                            HeartRateScreen(
-                                modifier = Modifier.fillMaxSize(),
-                                viewModel = viewModel,
-                                onShowHistory = { showHistoryScreen = true },
-                                onToggleFloatingWindow = { toggleFloatingWindow() },
-                                onRequestOverlayPermission = { requestOverlayPermission() },
-                                sharedTransitionScope = this@SharedTransitionLayout,
-                                animatedContentScope = this@AnimatedContent
-                            )
                         }
                     }
                 }

@@ -500,6 +500,7 @@ fun RecordControls(
                 modifier = Modifier
                     .weight(1f)
                     .height(48.dp),
+                enabled = isConnected,
                 shape = AppShapes.button,
                 elevation = ButtonDefaults.buttonElevation(
                     defaultElevation = 0.dp,
