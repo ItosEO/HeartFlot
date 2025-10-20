@@ -3,18 +3,25 @@ package com.itos.heartflot.ui
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -33,7 +40,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -93,6 +103,12 @@ fun AppInfoScreen(
         ) {
             // 应用信息卡片
             AppInfoCard()
+            
+            // 作者信息卡片
+            AuthorInfoCard()
+            
+            // 技术栈卡片
+            TechStackSection()
         }
     }
     }
@@ -147,7 +163,7 @@ private fun AppInfoCard() {
             
             // 版本号
             Text(
-                text = "${BuildConfig.VERSION_NAME}",
+                text = BuildConfig.VERSION_NAME,
                 fontSize = 16.sp,
                 color = Color.White.copy(alpha = 0.8f)
             )
@@ -155,3 +171,137 @@ private fun AppInfoCard() {
     }
 }
 
+@Composable
+private fun AuthorInfoCard() {
+    val context = LocalContext.current
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = AppShapes.card
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    try {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("coolmarket://u/3287595"))
+                        context.startActivity(intent)
+                    } catch (e: Exception) {
+                        // 如果酷安未安装，打开浏览器
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.coolapk.com/u/3287595"))
+                        context.startActivity(intent)
+                    }
+                }
+                .padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column {
+                Text(
+                    text = "作者",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "ItosEO",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            
+            Icon(
+                imageVector = ImageVector.vectorResource(id = R.drawable.ic_coolapk),
+                contentDescription = "酷安",
+                modifier = Modifier.size(28.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun TechStackSection() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = AppShapes.card
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp)
+        ) {
+            Text(
+                text = "技术栈",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onTertiaryContainer
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            val techCategories = listOf(
+                "语言与框架" to listOf("Kotlin", "Jetpack Compose"),
+                "架构与模式" to listOf("ViewModel", "Coroutines", "Flow"),
+                "数据存储" to listOf("DataStore Preferences"),
+                "蓝牙通信" to listOf("Bluetooth LE", "Heart Rate Profile"),
+                "UI设计" to listOf("Material Design 3", "Capsule")
+            )
+            
+            techCategories.forEachIndexed { index, (category, items) ->
+                TechCategory(category, items)
+                if (index < techCategories.size - 1) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun TechCategory(category: String, items: List<String>) {
+    Column {
+        Text(
+            text = category,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onTertiaryContainer
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items.forEach { item ->
+                TechChip(item)
+            }
+        }
+    }
+}
+
+@Composable
+private fun TechChip(text: String) {
+    Box(
+        modifier = Modifier
+            .background(
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                shape = AppShapes.badge
+            )
+            .padding(horizontal = 14.dp, vertical = 8.dp)
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onTertiaryContainer
+        )
+    }
+}

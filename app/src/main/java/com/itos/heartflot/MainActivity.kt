@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModelProvider
@@ -47,8 +48,6 @@ class MainActivity : ComponentActivity() {
     private var heartRateService: HeartRateService? = null
     private var serviceBound = false
     
-    private var showHistoryScreen by mutableStateOf(false)
-    private var showAppInfoScreen by mutableStateOf(false)
     private var lastBackPressTime = 0L
     private val backPressInterval = 2000L // 2秒内连续按返回键才退出
     
@@ -132,6 +131,9 @@ class MainActivity : ComponentActivity() {
         permissionManager.checkAndRequestPermissions()
         
         setContent {
+            var showHistoryScreen by rememberSaveable { mutableStateOf(false) }
+            var showAppInfoScreen by rememberSaveable { mutableStateOf(false) }
+            
             HeartFlotTheme {
                 // 处理返回键
                 BackHandler(enabled = true) {
