@@ -1,0 +1,75 @@
+# 项目开发规范
+
+本文档旨在统一项目开发标准，确保代码质量和团队协作效率。
+
+## 1. 技术栈
+
+- **语言**: 项目统一使用 **Kotlin** 语言进行开发。
+- **UI框架**: 项目统一使用 **Jetpack Compose** 进行UI界面的构建。
+
+## 2. 项目配置
+
+- **最低SDK版本**: 项目的 `minSdkVersion` 必须设置为 **28**。
+  请在 `app/build.gradle.kts` 文件中确认此配置：
+  ```kotlin
+  android {
+      defaultConfig {
+          minSdk = 28
+          // ...
+      }
+      // ...
+  }
+  ```
+
+## 3. UI规范：G2连续性圆角
+
+为了实现更平滑、更美观的视觉效果，项目中**所有**的UI圆角都必须采用G2连续性圆角。
+
+我们使用第三方库 `Capsule` 来实现此效果。
+
+### 3.1. 依赖安装
+
+请确保已在项目中添加 `Capsule` 库的依赖。
+
+**第一步：在根目录的 `settings.gradle.kts` 中添加仓库地址**
+```kotlin
+// settings.gradle.kts
+dependencyResolutionManagement {
+    repositories {
+        // ... 其他仓库
+        maven("https://jitpack.io")
+    }
+}
+```
+
+**第二步：在 `app/build.gradle.kts` 中添加实现依赖**
+```kotlin
+// app/build.gradle.kts
+dependencies {
+    // ... 其他依赖
+    implementation("com.github.Kyant0:Capsule:<version>") // 请替换为最新版本
+}
+```
+
+### 3.2. 使用方法
+
+在Compose代码中，使用 `ContinuousRoundedRectangle` 或 `ContinuousCapsule` 替代标准的 `RoundedCornerShape`。
+
+**示例：**
+
+```kotlin
+import com.kyant.capsule.ContinuousRoundedRectangle
+import androidx.compose.ui.unit.dp
+
+// 创建一个G2连续性的圆角矩形
+val shape = ContinuousRoundedRectangle(16.dp)
+
+// 应用到组件上
+Box(
+    modifier = Modifier
+        .size(100.dp)
+        .background(Color.Blue, shape = shape)
+)
+```
+
+**禁止使用** `RoundedCornerShape` 或 `CircleShape`（除非有特殊设计要求并经过评审）。所有圆角实现都应遵循此规范。
