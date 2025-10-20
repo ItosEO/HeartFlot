@@ -135,6 +135,7 @@ class HeartRateViewModel(application: Application) : AndroidViewModel(applicatio
     }
     
     fun connectToDevice(deviceInfo: DeviceInfo) {
+        stopScan()
         bluetoothHelper.connect(deviceInfo.device)
         _state.value = _state.value.copy(
             connectedDevice = deviceInfo,
