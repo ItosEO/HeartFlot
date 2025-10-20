@@ -1,5 +1,7 @@
 package com.itos.heartflot
 
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -7,41 +9,40 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import com.itos.heartflot.service.HeartRateService
+import com.itos.heartflot.ui.HeartRateScreen
 import com.itos.heartflot.ui.theme.HeartFlotTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        
+        // 启动前台服务
+        startHeartRateService()
+        
         setContent {
             HeartFlotTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
+                    HeartRateScreen(
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
             }
         }
     }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    HeartFlotTheme {
-        Greeting("Android")
+    
+    private fun startHeartRateService() {
+        val intent = Intent(this, HeartRateService::class.java).apply {
+            action = HeartRateService.ACTION_START
+        }
+        startForegroundService(intent)
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        // 可选：停止服务
+         stopService(Intent(this, HeartRateService::class.java))
     }
 }
