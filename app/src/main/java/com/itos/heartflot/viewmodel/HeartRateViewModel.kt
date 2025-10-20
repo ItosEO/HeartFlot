@@ -157,6 +157,14 @@ class HeartRateViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
     
+    fun updateSessionNote(sessionId: String, note: String) {
+        viewModelScope.launch {
+            dataStore.updateSession(sessionId) { session ->
+                session.copy(note = note)
+            }
+        }
+    }
+    
     override fun onCleared() {
         super.onCleared()
         // ViewModel清除时不再需要释放蓝牙帮助类

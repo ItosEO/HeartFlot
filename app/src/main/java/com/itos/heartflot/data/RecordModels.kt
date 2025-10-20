@@ -15,7 +15,8 @@ data class RecordSession(
     val endTime: Long,
     val deviceName: String?,
     val deviceAddress: String?,
-    val records: List<HeartRateRecord> = emptyList()
+    val records: List<HeartRateRecord> = emptyList(),
+    val note: String = ""
 ) {
     val recordCount: Int get() = records.size
     

@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
@@ -132,7 +133,8 @@ fun RecordHistoryScreen(
                 items(sessions, key = { it.sessionId }) { session ->
                     RecordSessionCard(
                         session = session,
-                        onDelete = { viewModel.deleteSession(session.sessionId) }
+                        onDelete = { viewModel.deleteSession(session.sessionId) },
+                        onNoteUpdate = { note -> viewModel.updateSessionNote(session.sessionId, note) }
                     )
                 }
             }
@@ -144,9 +146,11 @@ fun RecordHistoryScreen(
 @Composable
 fun RecordSessionCard(
     session: RecordSession,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onNoteUpdate: (String) -> Unit
 ) {
     var isExpanded by remember { mutableStateOf(false) }
+    var noteText by remember(session.note) { mutableStateOf(session.note) }
     
     Card(
         modifier = Modifier
@@ -237,13 +241,54 @@ fun RecordSessionCard(
             AnimatedVisibility(
                 visible = isExpanded,
             ) {
-                HeartRateChart(
-                    session = session,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .padding(horizontal = 12.dp, vertical = 12.dp)
-                )
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    // 折线图
+                    HeartRateChart(
+                        session = session,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(240.dp)
+                            .padding(horizontal = 8.dp, vertical = 8.dp)
+                    )
+                    
+                    // 备注区域
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp)
+                            .padding(bottom = 12.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                                shape = AppShapes.badge
+                            )
+                            .clickable { }
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                    ) {
+                        BasicTextField(
+                            value = noteText,
+                            onValueChange = { 
+                                noteText = it
+                                onNoteUpdate(it)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            textStyle = MaterialTheme.typography.bodyMedium.copy(
+                                color = MaterialTheme.colorScheme.onSurface
+                            ),
+                            decorationBox = { innerTextField ->
+                                if (noteText.isEmpty()) {
+                                    Text(
+                                        text = "未设置备注，点击此处输入",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                    )
+                                }
+                                innerTextField()
+                            }
+                        )
+                    }
+                }
             }
         }
     }
@@ -294,7 +339,7 @@ private fun HeartRateChart(
     }
     
     Canvas(modifier = modifier) {
-        val padding = 40.dp.toPx()
+        val padding = 32.dp.toPx()
         val chartWidth = size.width - padding * 2
         val chartHeight = size.height - padding * 2
         
