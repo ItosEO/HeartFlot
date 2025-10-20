@@ -9,8 +9,10 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -114,8 +116,7 @@ private fun AppInfoCard() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // 应用图标
             Box(
@@ -132,6 +133,8 @@ private fun AppInfoCard() {
                 )
             }
             
+            Spacer(modifier = Modifier.height(16.dp))
+            
             // 应用名称
             Text(
                 text = "HeartFlot",
@@ -140,11 +143,13 @@ private fun AppInfoCard() {
                 color = Color.White
             )
             
+            Spacer(modifier = Modifier.height(4.dp))
+            
             // 版本号
             Text(
-                text = "版本 ${BuildConfig.VERSION_NAME}",
-                fontSize = 14.sp,
-                color = Color.White
+                text = "${BuildConfig.VERSION_NAME}",
+                fontSize = 16.sp,
+                color = Color.White.copy(alpha = 0.8f)
             )
         }
     }
