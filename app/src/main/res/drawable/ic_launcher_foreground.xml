@@ -1,30 +1,15 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:pathData="M31,63.928c0,0 6.4,-11 12.1,-13.1c7.2,-2.6 26,-1.4 26,-1.4l38.1,38.1L107,108.928l-32,-1L31,63.928z">
-        <aapt:attr name="android:fillColor">
-            <gradient
-                android:endX="85.84757"
-                android:endY="92.4963"
-                android:startX="42.9492"
-                android:startY="49.59793"
-                android:type="linear">
-                <item
-                    android:color="#44000000"
-                    android:offset="0.0" />
-                <item
-                    android:color="#00000000"
-                    android:offset="1.0" />
-            </gradient>
-        </aapt:attr>
-    </path>
-    <path
-        android:fillColor="#FFFFFF"
-        android:fillType="nonZero"
-        android:pathData="M65.3,45.828l3.8,-6.6c0.2,-0.4 0.1,-0.9 -0.3,-1.1c-0.4,-0.2 -0.9,-0.1 -1.1,0.3l-3.9,6.7c-6.3,-2.8 -13.4,-2.8 -19.7,0l-3.9,-6.7c-0.2,-0.4 -0.7,-0.5 -1.1,-0.3C38.8,38.328 38.7,38.828 38.9,39.228l3.8,6.6C36.2,49.428 31.7,56.028 31,63.928h46C76.3,56.028 71.8,49.428 65.3,45.828zM43.4,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2c-0.3,-0.7 -0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C45.3,56.528 44.5,57.328 43.4,57.328L43.4,57.328zM64.6,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2s-0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C66.5,56.528 65.6,57.328 64.6,57.328L64.6,57.328z"
-        android:strokeWidth="1"
-        android:strokeColor="#00000000" />
+    <group
+        android:scaleX="0.06"
+        android:scaleY="0.06"
+        android:translateX="25.2"
+        android:translateY="25.2">
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M480,480ZM80,360v-120q0,-33 23.5,-56.5T160,160h640q33,0 56.5,23.5T880,240v240h-80v-240L160,240v120L80,360ZM160,800q-33,0 -56.5,-23.5T80,720v-120h80v120h280v80L160,800ZM720,900l-61,-52q-88,-75 -113.5,-108.5T520,670q0,-45 32,-77.5t78,-32.5q26,0 49.5,12t40.5,35q16,-23 39.5,-35t50.5,-12q45,0 77.5,32.5T920,670q0,36 -26,69.5T780,848l-60,52ZM720,794 L748,771q56,-48 74,-67.5t18,-33.5q0,-12 -9,-21t-21,-9q-8,0 -14.5,3.5T780,655l-60,57 -61,-57q-9,-8 -15.5,-11.5T630,640q-13,0 -21.5,9t-8.5,21q0,14 17.5,33.5T691,771l29,23ZM280,680q-12,0 -21.5,-5.5T244,658l-69,-138L80,520v-80h120q11,0 20.5,6t14.5,16l45,89 124,-249q5,-10 15,-15t21,-5q11,0 21,5t15,15l68,138h136v80L520,520q-12,0 -21.5,-5.5T484,498l-44,-88 -125,248q-5,11 -14.5,16.5T280,680ZM720,717Z" />
+    </group>
 </vector>
