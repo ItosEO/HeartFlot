@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Visibility
@@ -101,6 +103,7 @@ fun HeartRateScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
             // 权限引导卡片
@@ -400,10 +403,10 @@ fun DeviceList(
                     modifier = Modifier.padding(vertical = 16.dp)
                 )
             } else {
-                LazyColumn(
+                Column(
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    items(devices) { device ->
+                    devices.forEach { device ->
                         DeviceItem(
                             device = device,
                             onClick = { onDeviceClick(device) }

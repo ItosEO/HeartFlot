@@ -28,6 +28,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -151,6 +152,7 @@ fun RecordSessionCard(
 ) {
     var isExpanded by remember { mutableStateOf(false) }
     var noteText by remember(session.note) { mutableStateOf(session.note) }
+    var isDeleteConfirming by remember { mutableStateOf(false) }
     
     Card(
         modifier = Modifier
@@ -171,7 +173,10 @@ fun RecordSessionCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { isExpanded = !isExpanded }
+                    .clickable { 
+                        isExpanded = !isExpanded
+                        isDeleteConfirming = false
+                    }
                     .padding(vertical = 8.dp, horizontal = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -186,7 +191,7 @@ fun RecordSessionCard(
                     )
                     Spacer(modifier = Modifier.padding(1.dp))
                     Text(
-                        text = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(session.startTime)),
+                        text = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault()).format(Date(session.startTime)),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -196,10 +201,14 @@ fun RecordSessionCard(
 
                 // 中间：心率统计
                 Row(
-                    modifier = Modifier.weight(1.2f),
+                    modifier = Modifier.weight(1.7f),
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    CompactHeartRateStat(
+                        value = session.minHeartRate,
+                        color = Color(0xFF4CAF50) // Green
+                    )
                     CompactHeartRateStat(
                         value = session.averageHeartRate,
                         color = Color(0xFF2196F3) // Blue
@@ -218,22 +227,31 @@ fun RecordSessionCard(
                     horizontalArrangement = Arrangement.End,
                     modifier = Modifier.weight(1.3f)
                 ) {
-                    Text(
-                        text = formatDuration(session.endTime - session.startTime),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(end = 8.dp)
+                Text(
+                    text = formatDuration(session.endTime - session.startTime),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+                IconButton(
+                    onClick = {
+                        if (isDeleteConfirming) {
+                            onDelete()
+                        } else {
+                            isDeleteConfirming = true
+                        }
+                    },
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isDeleteConfirming) Icons.Default.Check else Icons.Default.Delete,
+                        contentDescription = if (isDeleteConfirming) "确认删除" else "删除",
+                        tint = if (isDeleteConfirming) 
+                            MaterialTheme.colorScheme.error 
+                        else 
+                            MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
                     )
-                    IconButton(
-                        onClick = onDelete,
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "删除",
-                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
-                        )
-                    }
+                }
                 }
             }
             
@@ -263,7 +281,7 @@ fun RecordSessionCard(
                                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
                                 shape = AppShapes.badge
                             )
-                            .clickable { }
+                            .clickable { isDeleteConfirming = false }
                             .padding(horizontal = 16.dp, vertical = 12.dp)
                     ) {
                         BasicTextField(
@@ -320,8 +338,6 @@ private fun HeartRateChart(
     modifier: Modifier = Modifier
 ) {
     val textMeasurer = rememberTextMeasurer()
-    val primaryColor = MaterialTheme.colorScheme.primary
-    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
     val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
     
     if (session.records.isEmpty()) {
@@ -358,9 +374,9 @@ private fun HeartRateChart(
         
         val timeRange = records.last().timestamp - records.first().timestamp
         
-        // 虚线样式 (用于Y轴)
-        val dashedPathEffect = PathEffect.dashPathEffect(
-            intervals = floatArrayOf(8.dp.toPx(), 4.dp.toPx()),
+        // 点状虚线样式 (用于Y轴)
+        val dottedPathEffect = PathEffect.dashPathEffect(
+            intervals = floatArrayOf(1.dp.toPx(), 3.dp.toPx()),
             phase = 0f
         )
         
@@ -370,13 +386,13 @@ private fun HeartRateChart(
             val hr = minHr + (i * 5)
             val y = padding + chartHeight - ((hr - minHr).toFloat() / hrRange) * chartHeight
             
-            // 横向虚线
+            // 横向点状虚线
             drawLine(
                 color = onSurfaceVariantColor.copy(alpha = 0.2f),
                 start = Offset(padding, y),
                 end = Offset(padding + chartWidth, y),
                 strokeWidth = 1.dp.toPx(),
-                pathEffect = dashedPathEffect
+                pathEffect = dottedPathEffect
             )
             
             // Y轴标签
@@ -428,40 +444,50 @@ private fun HeartRateChart(
             )
         }
         
-        // 绘制折线
-        val path = Path()
-        records.forEachIndexed { index, record ->
-            val x = padding + ((record.timestamp - records.first().timestamp).toFloat() / timeRange) * chartWidth
-            val y = padding + chartHeight - ((record.heartRate - minHr).toFloat() / hrRange) * chartHeight
-            
-            if (index == 0) {
-                path.moveTo(x, y)
-            } else {
-                path.lineTo(x, y)
+        // 根据心率值获取颜色
+        fun getHeartRateColor(heartRate: Int): Color {
+            return when {
+                heartRate < 100 -> Color(0xFF4CAF50) // 绿色
+                heartRate < 120 -> Color(0xFFFFC107) // 黄色
+                else -> Color(0xFFF44336) // 红色
             }
         }
         
-        drawPath(
-            path = path,
-            color = primaryColor,
-            style = Stroke(
-                width = 2.5.dp.toPx(),
-                cap = StrokeCap.Round,
-                join = StrokeJoin.Round
-            )
-        )
+        // 分段绘制折线，每段根据心率值着色
+        records.forEachIndexed { index, record ->
+            if (index < records.size - 1) {
+                val nextRecord = records[index + 1]
+                
+                val x1 = padding + ((record.timestamp - records.first().timestamp).toFloat() / timeRange) * chartWidth
+                val y1 = padding + chartHeight - ((record.heartRate - minHr).toFloat() / hrRange) * chartHeight
+                
+                val x2 = padding + ((nextRecord.timestamp - records.first().timestamp).toFloat() / timeRange) * chartWidth
+                val y2 = padding + chartHeight - ((nextRecord.heartRate - minHr).toFloat() / hrRange) * chartHeight
+                
+                // 使用当前点的心率值决定线段颜色
+                val segmentColor = getHeartRateColor(record.heartRate)
+                
+                drawLine(
+                    color = segmentColor,
+                    start = Offset(x1, y1),
+                    end = Offset(x2, y2),
+                    strokeWidth = 2.5.dp.toPx(),
+                    cap = StrokeCap.Round
+                )
+            }
+        }
         
         // 绘制数据点
-        records.forEach { record ->
-            val x = padding + ((record.timestamp - records.first().timestamp).toFloat() / timeRange) * chartWidth
-            val y = padding + chartHeight - ((record.heartRate - minHr).toFloat() / hrRange) * chartHeight
-            
-            drawCircle(
-                color = primaryColor,
-                radius = 2.dp.toPx(),
-                center = Offset(x, y)
-            )
-        }
+//        records.forEach { record ->
+//            val x = padding + ((record.timestamp - records.first().timestamp).toFloat() / timeRange) * chartWidth
+//            val y = padding + chartHeight - ((record.heartRate - minHr).toFloat() / hrRange) * chartHeight
+//
+//            drawCircle(
+//                color = primaryColor,
+//                radius = 2.dp.toPx(),
+//                center = Offset(x, y)
+//            )
+//        }
     }
 }
 
