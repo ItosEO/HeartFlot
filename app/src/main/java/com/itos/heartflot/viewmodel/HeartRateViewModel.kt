@@ -5,11 +5,15 @@ import android.bluetooth.BluetoothDevice
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.itos.heartflot.bluetooth.BluetoothHelper
+import com.itos.heartflot.data.HeartRateRecord
+import com.itos.heartflot.data.RecordDataStore
+import com.itos.heartflot.data.RecordSession
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 data class DeviceInfo(
     val device: BluetoothDevice,
@@ -24,15 +28,24 @@ data class HeartRateState(
     val isScanning: Boolean = false,
     val connectedDevice: DeviceInfo? = null,
     val nearbyDevices: List<DeviceInfo> = emptyList(),
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isRecording: Boolean = false,
+    val showFloatingWindow: Boolean = false,
+    val currentSessionId: String? = null
 )
 
 class HeartRateViewModel(application: Application) : AndroidViewModel(application) {
     
     private val bluetoothHelper = BluetoothHelper(application)
+    private val dataStore = RecordDataStore(application)
     
     private val _state = MutableStateFlow(HeartRateState())
     val state: StateFlow<HeartRateState> = _state.asStateFlow()
+    
+    private val _allSessions = MutableStateFlow<List<RecordSession>>(emptyList())
+    val allSessions: StateFlow<List<RecordSession>> = _allSessions.asStateFlow()
+    
+    private val currentRecords = mutableListOf<HeartRateRecord>()
     
     private val discoveredDevices = mutableMapOf<String, DeviceInfo>()
     private var noDataTimeoutJob: Job? = null
@@ -43,6 +56,15 @@ class HeartRateViewModel(application: Application) : AndroidViewModel(applicatio
     
     init {
         setupBluetoothCallbacks()
+        loadSessions()
+    }
+    
+    private fun loadSessions() {
+        viewModelScope.launch {
+            dataStore.sessions.collect { sessions ->
+                _allSessions.value = sessions
+            }
+        }
     }
     
     private fun setupBluetoothCallbacks() {
@@ -73,6 +95,16 @@ class HeartRateViewModel(application: Application) : AndroidViewModel(applicatio
                     errorMessage = null
                 )
                 resetNoDataTimeout()
+                
+                // 记录中则保存数据
+                if (_state.value.isRecording) {
+                    currentRecords.add(
+                        HeartRateRecord(
+                            timestamp = System.currentTimeMillis(),
+                            heartRate = heartRate
+                        )
+                    )
+                }
             }
         }
         
@@ -175,6 +207,68 @@ class HeartRateViewModel(application: Application) : AndroidViewModel(applicatio
     }
     
     fun getBluetoothHelper(): BluetoothHelper = bluetoothHelper
+    
+    fun startRecording() {
+        if (!_state.value.isConnected) {
+            _state.value = _state.value.copy(errorMessage = "请先连接设备")
+            return
+        }
+        
+        val sessionId = UUID.randomUUID().toString()
+        _state.value = _state.value.copy(
+            isRecording = true,
+            currentSessionId = sessionId,
+            errorMessage = null
+        )
+    }
+    
+    fun stopRecording() {
+        val currentState = _state.value
+        val sessionId = currentState.currentSessionId
+        val device = currentState.connectedDevice
+        
+        if (sessionId != null && currentRecords.isNotEmpty()) {
+            viewModelScope.launch {
+                val session = RecordSession(
+                    sessionId = sessionId,
+                    startTime = currentRecords.first().timestamp,
+                    endTime = currentRecords.last().timestamp,
+                    deviceName = device?.name,
+                    deviceAddress = device?.address,
+                    records = currentRecords.toList()
+                )
+                dataStore.addSession(session)
+                currentRecords.clear()
+            }
+        }
+        
+        _state.value = _state.value.copy(
+            isRecording = false,
+            currentSessionId = null
+        )
+    }
+    
+    fun toggleRecording() {
+        if (_state.value.isRecording) {
+            stopRecording()
+        } else {
+            startRecording()
+        }
+    }
+    
+    fun showFloatingWindow() {
+        _state.value = _state.value.copy(showFloatingWindow = true)
+    }
+    
+    fun hideFloatingWindow() {
+        _state.value = _state.value.copy(showFloatingWindow = false)
+    }
+    
+    fun deleteSession(sessionId: String) {
+        viewModelScope.launch {
+            dataStore.deleteSession(sessionId)
+        }
+    }
     
     override fun onCleared() {
         super.onCleared()

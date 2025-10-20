@@ -18,13 +18,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,7 +56,10 @@ import com.itos.heartflot.viewmodel.HeartRateViewModel
 @Composable
 fun HeartRateScreen(
     modifier: Modifier = Modifier,
-    viewModel: HeartRateViewModel = viewModel()
+    viewModel: HeartRateViewModel = viewModel(),
+    onShowHistory: () -> Unit = {},
+    onToggleFloatingWindow: () -> Unit = {},
+    onRequestOverlayPermission: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
@@ -116,14 +125,27 @@ fun HeartRateScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // 设备列表
-            DeviceList(
-                devices = state.nearbyDevices,
-                isScanning = state.isScanning,
-                onDeviceClick = { device ->
-                    viewModel.connectToDevice(device)
-                }
+            // 记录与悬浮窗控制
+            RecordControls(
+                isConnected = state.isConnected,
+                isRecording = state.isRecording,
+                onToggleRecording = { viewModel.toggleRecording() },
+                onShowHistory = onShowHistory,
+                onToggleFloatingWindow = onToggleFloatingWindow
             )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // 设备列表 - 仅未连接时显示
+            if (!state.isConnected) {
+                DeviceList(
+                    devices = state.nearbyDevices,
+                    isScanning = state.isScanning,
+                    onDeviceClick = { device ->
+                        viewModel.connectToDevice(device)
+                    }
+                )
+            }
         }
         
         // 错误提示
@@ -415,5 +437,97 @@ fun DeviceItem(
                 .background(color = MaterialTheme.colorScheme.surfaceVariant)
                 .padding(horizontal = 8.dp, vertical = 4.dp)
         )
+    }
+}
+
+@Composable
+fun RecordControls(
+    isConnected: Boolean,
+    isRecording: Boolean,
+    onToggleRecording: () -> Unit,
+    onShowHistory: () -> Unit,
+    onToggleFloatingWindow: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // 记录控制按钮
+        Button(
+            onClick = onToggleRecording,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            enabled = isConnected,
+            shape = AppShapes.button,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (isRecording) 
+                    MaterialTheme.colorScheme.error 
+                else 
+                    MaterialTheme.colorScheme.primary,
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.38f)
+            ),
+            elevation = ButtonDefaults.buttonElevation(
+                defaultElevation = 0.dp,
+                pressedElevation = 0.dp
+            )
+        ) {
+            Text(
+                text = if (isRecording) "停止记录" else "开始记录",
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+        
+        // 悬浮窗和历史记录按钮
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilledTonalButton(
+                onClick = onToggleFloatingWindow,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp),
+                shape = AppShapes.button,
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 0.dp
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Visibility,
+                    contentDescription = "悬浮窗",
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.size(8.dp))
+                Text(
+                    text = "悬浮窗",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+            
+            FilledTonalButton(
+                onClick = onShowHistory,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp),
+                shape = AppShapes.button,
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 0.dp
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.History,
+                    contentDescription = "历史记录",
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.size(8.dp))
+                Text(
+                    text = "历史记录",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        }
     }
 }

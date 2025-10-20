@@ -8,13 +8,24 @@ import android.app.PendingIntent
 import android.app.Service
 import android.bluetooth.BluetoothDevice
 import android.content.Intent
+import android.net.Uri
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
+import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import com.itos.heartflot.MainActivity
 import com.itos.heartflot.R
 import com.itos.heartflot.bluetooth.BluetoothHelper
+import com.itos.heartflot.data.HeartRateRecord
+import com.itos.heartflot.data.RecordDataStore
+import com.itos.heartflot.data.RecordSession
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import java.util.UUID
 
 class HeartRateService : Service() {
     
@@ -28,10 +39,18 @@ class HeartRateService : Service() {
     private val binder = LocalBinder()
     private lateinit var bluetoothHelper: BluetoothHelper
     private lateinit var notificationManager: NotificationManager
+    private lateinit var floatingWindowManager: FloatingWindowManager
+    private lateinit var dataStore: RecordDataStore
+    
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     
     private var currentHeartRate: Int = 0
     private var connectedDeviceName: String? = null
+    private var connectedDeviceAddress: String? = null
     private var isConnected: Boolean = false
+    private var isRecording: Boolean = false
+    private var currentSessionId: String? = null
+    private val currentRecords = mutableListOf<HeartRateRecord>()
     
     inner class LocalBinder : Binder() {
         fun getService(): HeartRateService = this@HeartRateService
@@ -42,9 +61,18 @@ class HeartRateService : Service() {
         
         bluetoothHelper = BluetoothHelper(this)
         notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        floatingWindowManager = FloatingWindowManager(this)
+        dataStore = RecordDataStore(this)
         
         createNotificationChannel()
         setupBluetoothCallbacks()
+        setupFloatingWindowClick()
+    }
+    
+    private fun setupFloatingWindowClick() {
+        floatingWindowManager.setOnClickListener {
+            toggleRecording()
+        }
     }
     
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -117,13 +145,28 @@ class HeartRateService : Service() {
         bluetoothHelper.onHeartRateReceived = { heartRate ->
             currentHeartRate = heartRate
             updateNotification()
+            floatingWindowManager.updateHeartRate(heartRate)
+            
+            // 记录中则保存数据
+            if (isRecording) {
+                currentRecords.add(
+                    HeartRateRecord(
+                        timestamp = System.currentTimeMillis(),
+                        heartRate = heartRate
+                    )
+                )
+            }
         }
         
         bluetoothHelper.onConnectionStateChanged = { connected ->
             isConnected = connected
             if (!connected) {
                 connectedDeviceName = null
+                connectedDeviceAddress = null
                 currentHeartRate = 0
+                if (isRecording) {
+                    stopRecording()
+                }
             }
             updateNotification()
         }
@@ -138,19 +181,88 @@ class HeartRateService : Service() {
         } catch (e: SecurityException) {
             device.address
         }
+        connectedDeviceAddress = device.address
         bluetoothHelper.connect(device)
     }
     
     fun disconnect() {
+        if (isRecording) {
+            stopRecording()
+        }
         bluetoothHelper.disconnect()
         connectedDeviceName = null
+        connectedDeviceAddress = null
         currentHeartRate = 0
         isConnected = false
     }
     
+    fun showFloatingWindow(): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (!Settings.canDrawOverlays(this)) {
+                return false
+            }
+        }
+        floatingWindowManager.show()
+        return true
+    }
+    
+    fun hideFloatingWindow() {
+        floatingWindowManager.hide()
+    }
+    
+    fun isFloatingWindowShowing(): Boolean {
+        return floatingWindowManager.isShowing()
+    }
+    
+    fun startRecording() {
+        if (!isConnected) return
+        
+        currentSessionId = UUID.randomUUID().toString()
+        isRecording = true
+        floatingWindowManager.updateRecordingState(true)
+    }
+    
+    fun stopRecording() {
+        val sessionId = currentSessionId
+        
+        if (sessionId != null && currentRecords.isNotEmpty()) {
+            serviceScope.launch(Dispatchers.IO) {
+                val session = RecordSession(
+                    sessionId = sessionId,
+                    startTime = currentRecords.first().timestamp,
+                    endTime = currentRecords.last().timestamp,
+                    deviceName = connectedDeviceName,
+                    deviceAddress = connectedDeviceAddress,
+                    records = currentRecords.toList()
+                )
+                dataStore.addSession(session)
+                currentRecords.clear()
+            }
+        }
+        
+        isRecording = false
+        currentSessionId = null
+        floatingWindowManager.updateRecordingState(false)
+    }
+    
+    fun toggleRecording() {
+        if (isRecording) {
+            stopRecording()
+        } else {
+            startRecording()
+        }
+    }
+    
+    fun isRecording(): Boolean = isRecording
+    
     override fun onDestroy() {
         super.onDestroy()
+        if (isRecording) {
+            stopRecording()
+        }
+        floatingWindowManager.release()
         bluetoothHelper.release()
+        serviceScope.cancel()
     }
 }
 
