@@ -4,6 +4,9 @@ import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -53,13 +56,16 @@ import com.itos.heartflot.ui.theme.AppShapes
 import com.itos.heartflot.viewmodel.DeviceInfo
 import com.itos.heartflot.viewmodel.HeartRateViewModel
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun HeartRateScreen(
     modifier: Modifier = Modifier,
     viewModel: HeartRateViewModel = viewModel(),
     onShowHistory: () -> Unit = {},
     onToggleFloatingWindow: () -> Unit = {},
-    onRequestOverlayPermission: () -> Unit = {}
+    onRequestOverlayPermission: () -> Unit = {},
+    sharedTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
@@ -131,7 +137,9 @@ fun HeartRateScreen(
                 isRecording = state.isRecording,
                 onToggleRecording = { viewModel.toggleRecording() },
                 onShowHistory = onShowHistory,
-                onToggleFloatingWindow = onToggleFloatingWindow
+                onToggleFloatingWindow = onToggleFloatingWindow,
+                sharedTransitionScope = sharedTransitionScope,
+                animatedContentScope = animatedContentScope
             )
             
             Spacer(modifier = Modifier.height(16.dp))
@@ -440,14 +448,18 @@ fun DeviceItem(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun RecordControls(
     isConnected: Boolean,
     isRecording: Boolean,
     onToggleRecording: () -> Unit,
     onShowHistory: () -> Unit,
-    onToggleFloatingWindow: () -> Unit
+    onToggleFloatingWindow: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope
 ) {
+    with(sharedTransitionScope) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -510,7 +522,11 @@ fun RecordControls(
                 onClick = onShowHistory,
                 modifier = Modifier
                     .weight(1f)
-                    .height(48.dp),
+                    .height(48.dp)
+                    .sharedBounds(
+                        rememberSharedContentState(key = "history_container"),
+                        animatedContentScope
+                    ),
                 shape = AppShapes.button,
                 elevation = ButtonDefaults.buttonElevation(
                     defaultElevation = 0.dp,
@@ -525,9 +541,14 @@ fun RecordControls(
                 Spacer(modifier = Modifier.size(8.dp))
                 Text(
                     text = "历史记录",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.sharedBounds(
+                        rememberSharedContentState(key = "history_title"),
+                        animatedContentScope
+                    )
                 )
             }
         }
+    }
     }
 }

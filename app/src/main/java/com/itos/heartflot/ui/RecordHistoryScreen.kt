@@ -1,5 +1,8 @@
 package com.itos.heartflot.ui
 
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,18 +45,35 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun RecordHistoryScreen(
     viewModel: HeartRateViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope
 ) {
+    with(sharedTransitionScope) {
     val sessions by viewModel.allSessions.collectAsState()
     
     Scaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .sharedBounds(
+                rememberSharedContentState(key = "history_container"),
+                animatedContentScope
+            ),
         topBar = {
             TopAppBar(
-                title = { Text("历史记录") },
+                title = { 
+                    Text(
+                        "历史记录",
+                        modifier = Modifier.sharedBounds(
+                            rememberSharedContentState(key = "history_title"),
+                            animatedContentScope
+                        )
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -94,6 +114,7 @@ fun RecordHistoryScreen(
                 }
             }
         }
+    }
     }
 }
 

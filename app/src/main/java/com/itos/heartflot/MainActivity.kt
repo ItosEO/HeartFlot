@@ -15,6 +15,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -59,6 +66,7 @@ class MainActivity : ComponentActivity() {
     
     private lateinit var overlayPermissionLauncher: ActivityResultLauncher<Intent>
     
+    @OptIn(ExperimentalSharedTransitionApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -93,20 +101,38 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    if (showHistoryScreen) {
-                        RecordHistoryScreen(
-                            viewModel = viewModel,
-                            onBack = { showHistoryScreen = false }
-                        )
-                    } else {
-                        HeartRateScreen(
-                            modifier = Modifier.padding(innerPadding),
-                            viewModel = viewModel,
-                            onShowHistory = { showHistoryScreen = true },
-                            onToggleFloatingWindow = { toggleFloatingWindow() },
-                            onRequestOverlayPermission = { requestOverlayPermission() }
-                        )
+                SharedTransitionLayout {
+                    AnimatedContent(
+                        targetState = showHistoryScreen,
+                        transitionSpec = {
+                            if (targetState) { // -> History
+                                fadeIn(animationSpec = tween(220, delayMillis = 80)) togetherWith
+                                        fadeOut(animationSpec = tween(100))
+                            } else { // -> Main
+                                fadeIn(animationSpec = tween(220, delayMillis = 80)) togetherWith
+                                        fadeOut(animationSpec = tween(100))
+                            }
+                        },
+                        label = "screen_transition"
+                    ) { targetShowHistory ->
+                        if (targetShowHistory) {
+                            RecordHistoryScreen(
+                                viewModel = viewModel,
+                                onBack = { showHistoryScreen = false },
+                                sharedTransitionScope = this@SharedTransitionLayout,
+                                animatedContentScope = this@AnimatedContent
+                            )
+                        } else {
+                            HeartRateScreen(
+                                modifier = Modifier.fillMaxSize(),
+                                viewModel = viewModel,
+                                onShowHistory = { showHistoryScreen = true },
+                                onToggleFloatingWindow = { toggleFloatingWindow() },
+                                onRequestOverlayPermission = { requestOverlayPermission() },
+                                sharedTransitionScope = this@SharedTransitionLayout,
+                                animatedContentScope = this@AnimatedContent
+                            )
+                        }
                     }
                 }
             }
