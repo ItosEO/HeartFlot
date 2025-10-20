@@ -45,6 +45,10 @@ class MainActivity : ComponentActivity() {
             val localBinder = binder as? HeartRateService.LocalBinder
             heartRateService = localBinder?.getService()
             serviceBound = true
+            // 将 Service 实例注入 ViewModel
+            heartRateService?.let {
+                viewModel.setHeartRateService(it)
+            }
         }
         
         override fun onServiceDisconnected(name: ComponentName?) {

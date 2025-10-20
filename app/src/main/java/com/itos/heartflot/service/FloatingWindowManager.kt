@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.PixelFormat
 import android.os.Build
+import android.util.Log
 import android.view.Gravity
 import android.view.WindowManager
 import androidx.compose.ui.platform.ComposeView
@@ -16,6 +17,7 @@ class FloatingWindowManager(private val context: Context) {
     private var layoutParams: WindowManager.LayoutParams? = null
     
     private var isShowing = false
+    private var clickListener: (() -> Unit)? = null
     
     @SuppressLint("ClickableViewAccessibility")
     fun show() {
@@ -32,6 +34,11 @@ class FloatingWindowManager(private val context: Context) {
                         e.printStackTrace()
                     }
                 }
+            }
+            // 设置点击监听器
+            Log.d("FloatingWindowManager", "Setting click listener in show(), listener exists: ${clickListener != null}")
+            clickListener?.let { listener ->
+                setOnClickListener(listener)
             }
             onCreate()
             onStart()
@@ -94,6 +101,8 @@ class FloatingWindowManager(private val context: Context) {
     }
     
     fun setOnClickListener(listener: () -> Unit) {
+        Log.d("FloatingWindowManager", "setOnClickListener called, floatingView exists: ${floatingView != null}")
+        clickListener = listener
         floatingView?.setOnClickListener(listener)
     }
     

@@ -2,6 +2,7 @@ package com.itos.heartflot.ui
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import androidx.compose.foundation.background
@@ -59,13 +60,14 @@ class FloatingWindowView(context: Context) : LifecycleOwner, ViewModelStoreOwner
         setViewTreeSavedStateRegistryOwner(this@FloatingWindowView)
         setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
         
-        setupTouchListener(this)
         setContent {
             FloatingCapsule(
                 heartRate = heartRate,
                 isRecording = isRecording
             )
         }
+        
+        setupTouchListener(this)
     }
     
     init {
@@ -107,6 +109,7 @@ class FloatingWindowView(context: Context) : LifecycleOwner, ViewModelStoreOwner
     }
     
     fun setOnClickListener(listener: () -> Unit) {
+        Log.d("FloatingWindowView", "setOnClickListener called")
         onClickListener = listener
     }
     
@@ -115,6 +118,7 @@ class FloatingWindowView(context: Context) : LifecycleOwner, ViewModelStoreOwner
         composeView.setOnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
+                    Log.d("FloatingWindow", "ACTION_DOWN")
                     lastX = event.rawX
                     lastY = event.rawY
                     isDragging = false
@@ -130,11 +134,14 @@ class FloatingWindowView(context: Context) : LifecycleOwner, ViewModelStoreOwner
                         onMove?.invoke(dx, dy)
                         lastX = event.rawX
                         lastY = event.rawY
+                        Log.d("FloatingWindow", "ACTION_MOVE: dragging, distance=$distance")
                     }
                     true
                 }
                 MotionEvent.ACTION_UP -> {
+                    Log.d("FloatingWindow", "ACTION_UP: isDragging=$isDragging, listener=${onClickListener != null}")
                     if (!isDragging) {
+                        Log.d("FloatingWindow", "Invoking click listener")
                         onClickListener?.invoke()
                     }
                     isDragging = false
@@ -154,7 +161,7 @@ fun FloatingCapsule(
 ) {
     Box(
         modifier = modifier
-            .size(width = 100.dp, height = 48.dp)
+            .size(width = 48.dp, height = 28.dp)
             .background(
                 color = if (isRecording)
                     Color(0xD9F44336) // 半透明红色 (0.85 alpha)
@@ -167,7 +174,7 @@ fun FloatingCapsule(
         Text(
             text = heartRate.toString(),
             color = Color.White,
-            fontSize = 24.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Bold
         )
     }
