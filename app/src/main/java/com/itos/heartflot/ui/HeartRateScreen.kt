@@ -61,6 +61,7 @@ import com.itos.heartflot.viewmodel.HeartRateViewModel
 fun HeartRateScreen(
     modifier: Modifier = Modifier,
     viewModel: HeartRateViewModel = viewModel(),
+    permissionGuideData: PermissionGuideData = PermissionGuideData(state = PermissionGuideState.HIDDEN),
     onShowHistory: () -> Unit = {},
     onToggleFloatingWindow: () -> Unit = {},
     onRequestOverlayPermission: () -> Unit = {},
@@ -102,6 +103,12 @@ fun HeartRateScreen(
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
+            // 权限引导卡片
+            PermissionGuideCard(
+                data = permissionGuideData,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+            
             // 心率显示区域
             HeartRateDisplay(
                 heartRate = state.currentHeartRate,

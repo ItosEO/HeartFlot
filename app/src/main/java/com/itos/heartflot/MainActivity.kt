@@ -31,8 +31,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModelProvider
 import android.widget.Toast
+import com.itos.heartflot.permission.PermissionManager
 import com.itos.heartflot.service.HeartRateService
 import com.itos.heartflot.ui.HeartRateScreen
+import com.itos.heartflot.ui.PermissionGuideData
+import com.itos.heartflot.ui.PermissionGuideState
 import com.itos.heartflot.ui.RecordHistoryScreen
 import com.itos.heartflot.ui.theme.HeartFlotTheme
 import com.itos.heartflot.viewmodel.HeartRateViewModel
@@ -47,6 +50,14 @@ class MainActivity : ComponentActivity() {
     private var lastBackPressTime = 0L
     private val backPressInterval = 2000L // 2秒内连续按返回键才退出
     
+    // 权限管理器
+    private lateinit var permissionManager: PermissionManager
+    
+    // 权限引导卡片状态
+    private var permissionGuideData by mutableStateOf(
+        PermissionGuideData(state = PermissionGuideState.HIDDEN)
+    )
+    
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
             val localBinder = binder as? HeartRateService.LocalBinder
@@ -55,12 +66,25 @@ class MainActivity : ComponentActivity() {
             // 将 Service 实例注入 ViewModel
             heartRateService?.let {
                 viewModel.setHeartRateService(it)
+                // 服务连接成功，检查电池优化
+                val batteryGuide = permissionManager.checkBatteryOptimization(permissionGuideData.state)
+                batteryGuide?.let { guide -> permissionGuideData = guide }
             }
         }
         
         override fun onServiceDisconnected(name: ComponentName?) {
             heartRateService = null
             serviceBound = false
+            // 服务断开连接，显示引导卡片
+            if (permissionManager.bluetoothPermissionsGranted) {
+                permissionGuideData = PermissionGuideData(
+                    state = PermissionGuideState.SERVICE_NOT_CONNECTED,
+                    title = "服务未连接",
+                    message = "权限已授予但服务未连接，请尝试重启服务。",
+                    buttonText = "重启服务",
+                    onButtonClick = { restartService() }
+                )
+            }
         }
     }
     
@@ -76,6 +100,25 @@ class MainActivity : ComponentActivity() {
             ViewModelProvider.AndroidViewModelFactory.getInstance(application)
         )[HeartRateViewModel::class.java]
         
+        // 初始化权限管理器
+        permissionManager = PermissionManager(
+            activity = this,
+            onPermissionStateChanged = { guideData ->
+                permissionGuideData = guideData
+            },
+            onAllPermissionsGranted = {
+                if (!serviceBound) {
+                    startHeartRateService()
+                    bindHeartRateService()
+                } else {
+                    // 服务已连接，直接检查电池优化
+                    val batteryGuide = permissionManager.checkBatteryOptimization(permissionGuideData.state)
+                    batteryGuide?.let { permissionGuideData = it }
+                }
+            }
+        )
+        permissionManager.initialize()
+        
         // 注册悬浮窗权限请求
         overlayPermissionLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
@@ -83,10 +126,8 @@ class MainActivity : ComponentActivity() {
             // 权限结果在这里处理，但实际检查在使用时进行
         }
         
-        // 启动前台服务
-        startHeartRateService()
-        // 绑定服务
-        bindHeartRateService()
+        // 检查并请求权限
+        permissionManager.checkAndRequestPermissions()
         
         setContent {
             HeartFlotTheme {
@@ -127,6 +168,7 @@ class MainActivity : ComponentActivity() {
                                 HeartRateScreen(
                                     modifier = Modifier.padding(innerPadding),
                                     viewModel = viewModel,
+                                    permissionGuideData = permissionGuideData,
                                     onShowHistory = { showHistoryScreen = true },
                                     onToggleFloatingWindow = { toggleFloatingWindow() },
                                     onRequestOverlayPermission = { requestOverlayPermission() },
@@ -141,11 +183,54 @@ class MainActivity : ComponentActivity() {
         }
     }
     
+    
     private fun startHeartRateService() {
-        val intent = Intent(this, HeartRateService::class.java).apply {
-            action = HeartRateService.ACTION_START
+        if (!permissionManager.bluetoothPermissionsGranted) {
+            permissionGuideData = PermissionGuideData(
+                state = PermissionGuideState.PERMISSION_NEEDED,
+                title = "需要蓝牙权限",
+                message = "请先授予蓝牙权限以启动心率监测服务。",
+                buttonText = "授予权限",
+                onButtonClick = { permissionManager.requestBluetoothPermissions() }
+            )
+            return
         }
-        startForegroundService(intent)
+        
+        try {
+            val intent = Intent(this, HeartRateService::class.java).apply {
+                action = HeartRateService.ACTION_START
+            }
+            startForegroundService(intent)
+        } catch (e: SecurityException) {
+            permissionGuideData = PermissionGuideData(
+                state = PermissionGuideState.SERVICE_FAILED,
+                title = "服务启动失败",
+                message = "由于权限不足，无法启动心率监测服务。请检查应用权限设置。",
+                buttonText = "重新尝试",
+                onButtonClick = { permissionManager.checkAndRequestPermissions() }
+            )
+            e.printStackTrace()
+        } catch (e: Exception) {
+            permissionGuideData = PermissionGuideData(
+                state = PermissionGuideState.SERVICE_FAILED,
+                title = "服务启动失败",
+                message = "启动心率监测服务时出现错误：${e.message ?: "未知错误"}",
+                buttonText = "重试",
+                onButtonClick = { restartService() }
+            )
+            e.printStackTrace()
+        }
+    }
+    
+    private fun restartService() {
+        permissionGuideData = PermissionGuideData(state = PermissionGuideState.HIDDEN)
+        if (serviceBound) {
+            unbindService(serviceConnection)
+            serviceBound = false
+        }
+        heartRateService = null
+        startHeartRateService()
+        bindHeartRateService()
     }
     
     private fun bindHeartRateService() {
@@ -187,6 +272,25 @@ class MainActivity : ComponentActivity() {
             // 第一次按返回键，显示提示
             lastBackPressTime = currentTime
             Toast.makeText(this, "再次返回退出应用", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        // 从后台返回时重新检查权限状态
+        permissionManager.updatePermissionStates()
+        
+        // 根据权限状态更新 UI
+        if (permissionManager.bluetoothPermissionsGranted && permissionManager.notificationPermissionGranted) {
+            // 所有权限已授予
+            if (permissionGuideData.state == PermissionGuideState.PERMISSION_NEEDED ||
+                permissionGuideData.state == PermissionGuideState.BATTERY_OPTIMIZATION_SUGGESTION) {
+                permissionGuideData = PermissionGuideData(state = PermissionGuideState.HIDDEN)
+                if (serviceBound) {
+                    val batteryGuide = permissionManager.checkBatteryOptimization(permissionGuideData.state)
+                    batteryGuide?.let { permissionGuideData = it }
+                }
+            }
         }
     }
     
