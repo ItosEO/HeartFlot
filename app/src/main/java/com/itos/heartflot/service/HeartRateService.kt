@@ -262,6 +262,9 @@ class HeartRateService : Service() {
             }
         }
         floatingWindowManager.show()
+        // 同步当前的心率和录制状态到悬浮窗
+        floatingWindowManager.updateHeartRate(_state.value.currentHeartRate)
+        floatingWindowManager.updateRecordingState(_state.value.isRecording)
         _state.value = _state.value.copy(showFloatingWindow = true)
         return true
     }

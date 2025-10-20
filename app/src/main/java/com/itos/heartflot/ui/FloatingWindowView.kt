@@ -6,8 +6,16 @@ import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -161,22 +169,34 @@ fun FloatingCapsule(
 ) {
     Box(
         modifier = modifier
-            .size(width = 44.dp, height = 28.dp)
             .background(
                 color = if (isRecording)
                     Color(0x99F44336) // 60% alpha red
                 else
                     Color(0x994CAF50), // 60% alpha green
                 shape = ContinuousCapsule()
-            ),
+            )
+            .padding(horizontal = 10.dp, vertical = 4.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = heartRate.toString(),
-            color = Color.White,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Favorite,
+                contentDescription = "心率",
+                modifier = Modifier.size(14.dp),
+                tint = Color.White
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = heartRate.toString(),
+                color = Color.White,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }
 

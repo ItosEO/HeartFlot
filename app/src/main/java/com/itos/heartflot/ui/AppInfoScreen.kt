@@ -1,8 +1,10 @@
 package com.itos.heartflot.ui
 
 import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.BoundsTransform
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.tween
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.Image
@@ -49,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.itos.heartflot.BuildConfig
 import com.itos.heartflot.R
+import com.itos.heartflot.ui.theme.AnimationDurations
 import com.itos.heartflot.ui.theme.AppShapes
 import com.itos.heartflot.ui.theme.HeartRed40
 import com.itos.heartflot.ui.theme.HeartRed80
@@ -69,7 +72,8 @@ fun AppInfoScreen(
             .fillMaxSize()
             .sharedBounds(
                 rememberSharedContentState(key = "appinfo_container"),
-                animatedContentScope
+                animatedContentScope,
+                boundsTransform = { _, _ -> tween(durationMillis = AnimationDurations.SCREEN_TRANSITION_DURATION) }
             ),
         topBar = {
             TopAppBar(
@@ -78,7 +82,8 @@ fun AppInfoScreen(
                         "应用信息",
                         modifier = Modifier.sharedBounds(
                             rememberSharedContentState(key = "appinfo_title"),
-                            animatedContentScope
+                            animatedContentScope,
+                            boundsTransform = { _, _ -> tween(durationMillis = AnimationDurations.SCREEN_TRANSITION_DURATION) }
                         )
                     )
                 },

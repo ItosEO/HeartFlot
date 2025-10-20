@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -55,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.itos.heartflot.ui.theme.AnimationDurations
 import com.itos.heartflot.ui.theme.AppShapes
 import com.itos.heartflot.viewmodel.DeviceInfo
 import com.itos.heartflot.viewmodel.HeartRateViewModel
@@ -293,7 +295,8 @@ fun AppInfoCard(
             .fillMaxWidth()
             .sharedBounds(
                 rememberSharedContentState(key = "appinfo_container"),
-                animatedContentScope
+                animatedContentScope,
+                boundsTransform = { _, _ -> tween(durationMillis = AnimationDurations.SCREEN_TRANSITION_DURATION) }
             )
             .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
@@ -320,7 +323,8 @@ fun AppInfoCard(
                 "应用信息",
                 modifier = Modifier.sharedBounds(
                     rememberSharedContentState(key = "appinfo_title"),
-                    animatedContentScope
+                    animatedContentScope,
+                    boundsTransform = { _, _ -> tween(durationMillis = AnimationDurations.SCREEN_TRANSITION_DURATION) }
                 ),
                 color = MaterialTheme.colorScheme.onSecondaryContainer
             )
@@ -596,7 +600,8 @@ fun RecordControls(
                     .height(48.dp)
                     .sharedBounds(
                         rememberSharedContentState(key = "history_container"),
-                        animatedContentScope
+                        animatedContentScope,
+                        boundsTransform = { _, _ -> tween(durationMillis = AnimationDurations.SCREEN_TRANSITION_DURATION) }
                     ),
                 shape = AppShapes.button,
                 elevation = ButtonDefaults.buttonElevation(
@@ -615,7 +620,8 @@ fun RecordControls(
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.sharedBounds(
                         rememberSharedContentState(key = "history_title"),
-                        animatedContentScope
+                        animatedContentScope,
+                        boundsTransform = { _, _ -> tween(durationMillis = AnimationDurations.SCREEN_TRANSITION_DURATION) }
                     )
                 )
             }

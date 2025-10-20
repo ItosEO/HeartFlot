@@ -62,6 +62,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.itos.heartflot.data.RecordSession
+import com.itos.heartflot.ui.theme.AnimationDurations
 import com.itos.heartflot.ui.theme.AppShapes
 import com.itos.heartflot.viewmodel.HeartRateViewModel
 import java.text.SimpleDateFormat
@@ -85,7 +86,8 @@ fun RecordHistoryScreen(
             .fillMaxSize()
             .sharedBounds(
                 rememberSharedContentState(key = "history_container"),
-                animatedContentScope
+                animatedContentScope,
+                boundsTransform = { _, _ -> tween(durationMillis = AnimationDurations.SCREEN_TRANSITION_DURATION) }
             ),
         topBar = {
             TopAppBar(
@@ -94,7 +96,8 @@ fun RecordHistoryScreen(
                         "历史记录",
                         modifier = Modifier.sharedBounds(
                             rememberSharedContentState(key = "history_title"),
-                            animatedContentScope
+                            animatedContentScope,
+                            boundsTransform = { _, _ -> tween(durationMillis = AnimationDurations.SCREEN_TRANSITION_DURATION) }
                         )
                     )
                 },

@@ -39,6 +39,7 @@ import com.itos.heartflot.ui.HeartRateScreen
 import com.itos.heartflot.ui.PermissionGuideData
 import com.itos.heartflot.ui.PermissionGuideState
 import com.itos.heartflot.ui.RecordHistoryScreen
+import com.itos.heartflot.ui.theme.AnimationDurations
 import com.itos.heartflot.ui.theme.HeartFlotTheme
 import com.itos.heartflot.viewmodel.HeartRateViewModel
 
@@ -162,8 +163,8 @@ class MainActivity : ComponentActivity() {
                                 else -> "main"
                             },
                             transitionSpec = {
-                                fadeIn(animationSpec = tween(500, delayMillis = 140)) togetherWith
-                                        fadeOut(animationSpec = tween(200))
+                                fadeIn(animationSpec = tween(AnimationDurations.SCREEN_TRANSITION_DURATION, delayMillis = AnimationDurations.SCREEN_TRANSITION_DELAY)) togetherWith
+                                        fadeOut(animationSpec = tween(AnimationDurations.SCREEN_TRANSITION_FADE_OUT))
                             },
                             label = "screen_transition"
                         ) { targetScreen ->
